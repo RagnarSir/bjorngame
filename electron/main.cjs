@@ -3,6 +3,7 @@
 // så fetch (GLB-modeller), ES-moduler og pointer-lock alle virker — modsat file://,
 // hvor Chromium blokerer fetch og kræver korrekte MIME-typer til moduler.
 const { app, BrowserWindow, Menu } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -75,7 +76,12 @@ async function createWindow() {
   win.loadURL(`http://127.0.0.1:${port}/`);
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+  // Tjek for nye versioner ved opstart og hent dem automatisk i baggrunden;
+  // den nye version installeres næste gang appen lukkes. (Kun i den pakkede app.)
+  autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+});
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();

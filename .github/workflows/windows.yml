@@ -1,8 +1,9 @@
-name: Build Windows installer
+name: Build & publish Windows installer
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths-ignore: ['**.md'] # spring tunge byg over ved rene dokument-ændringer
   workflow_dispatch:
 
 permissions:
@@ -21,16 +22,13 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Stigende version pr. build, så electron-updater ser det som en ny version
+      - name: Sæt auto-version
+        run: npm version 1.0.${{ github.run_number }} --no-git-tag-version --allow-same-version
       - run: npm run build
-      - name: Byg Windows-installer (.exe)
-        run: npx electron-builder --win --publish never
-      - name: Upload installer som artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: animal-hunt-windows-installer
-          path: release/*.exe
-      - name: Udgiv installer ved tag
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release/*.exe
+      # Bygger installeren OG udgiver den til GitHub Releases inkl. latest.yml,
+      # som auto-updateren bruger til at finde og hente opdateringer.
+      - name: Byg + udgiv installer
+        run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
