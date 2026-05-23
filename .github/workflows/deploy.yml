@@ -10,6 +10,10 @@ permissions:
   pages: write
   id-token: write
 
+# Tving alle JS-actions til at køre på Node.js 24 (fremtidssikring – Node 20 udfases)
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -21,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run build
