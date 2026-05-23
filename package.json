@@ -3,19 +3,39 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "BjørnGame – FPS arena-shooter mod vilde dyr, bygget med Three.js",
+  "description": "Animal Hunt – FPS arena-shooter mod vilde dyr, bygget med Three.js",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dist:win": "npm run build && electron-builder --win"
   },
   "dependencies": {
     "three": "^0.184.0"
   },
   "devDependencies": {
     "@types/three": "^0.184.1",
+    "electron": "^42.2.0",
+    "electron-builder": "^26.8.1",
     "typescript": "^6.0.3",
     "vite": "^8.0.14"
+  },
+  "build": {
+    "appId": "com.ragnarsir.animalhunt",
+    "productName": "Animal Hunt",
+    "asar": false,
+    "directories": { "output": "release" },
+    "files": ["dist/**/*", "electron/**/*"],
+    "win": { "target": "nsis" },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Animal Hunt"
+    }
   }
 }
