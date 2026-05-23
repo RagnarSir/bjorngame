@@ -26,7 +26,7 @@
   "build": {
     "appId": "com.ragnarsir.animalhunt",
     "productName": "Animal Hunt",
-    "publish": [{ "provider": "github", "owner": "RagnarSir", "repo": "bjorngame" }],
+    "publish": [{ "provider": "github", "owner": "RagnarSir", "repo": "bjorngame", "releaseType": "release" }],
     "asar": false,
     "directories": {
       "output": "release"
