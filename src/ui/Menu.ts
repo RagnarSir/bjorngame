@@ -22,6 +22,7 @@ export class Menu {
     startBtn.onclick = () => this.onStart?.();
     startPanel.appendChild(startBtn);
     startPanel.appendChild(controlsHint());
+    startPanel.appendChild(touchHint());
     this.startOverlay.appendChild(startPanel);
 
     // ---- Pause ----
@@ -113,6 +114,17 @@ function controlsHint(): HTMLDivElement {
     <kbd>Mouse</kbd> look · <kbd>Left-click</kbd> shoot · <kbd>Right-click</kbd> aim/zoom<br>
     <kbd>Space</kbd> jump · <kbd>R</kbd> reload · <kbd>1-9</kbd> switch weapon ·
     <kbd>Shift</kbd> sprint · <kbd>Esc</kbd> pause
+  `;
+  return d;
+}
+
+// Vises kun på touch-enheder (CSS: .controls-hint-touch).
+function touchHint(): HTMLDivElement {
+  const d = document.createElement('div');
+  d.className = 'controls-hint controls-hint-touch';
+  d.innerHTML = `
+    <b>Left side</b> drag to move · <b>Right side</b> drag to look<br>
+    🔫 shoot · 🎯 aim · ⤒ jump · ⟳ reload · weapon button to switch · ⏸ pause
   `;
   return d;
 }

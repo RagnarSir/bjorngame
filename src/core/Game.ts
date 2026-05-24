@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { SceneSetup } from './SceneSetup';
 import type { AssetLoader } from './AssetLoader';
 import { Input } from './Input';
+import { TouchControls, isTouchDevice } from './TouchControls';
 import { AudioManager } from './Audio';
 import { Player } from '../entities/Player';
 import { Arsenal } from '../entities/Weapon';
@@ -20,6 +21,7 @@ import {
   AIM_FOV,
   AIM_SENS_FACTOR,
   MOUSE_SENSITIVITY,
+  TOUCH_LOOK_SENS,
 } from '../config';
 
 interface Coin {
@@ -34,6 +36,8 @@ export class Game {
   private camera: THREE.PerspectiveCamera;
 
   private input = new Input();
+  private touch = isTouchDevice();
+  private touchControls?: TouchControls;
   private audio = new AudioManager();
   private player: Player;
   private arsenal: Arsenal;
@@ -71,6 +75,17 @@ export class Game {
     this.hud = new HUD(ui);
     this.menu = new Menu(ui);
     this.shop = new Shop(ui, this.economy, this.arsenal, this.player, this.audio);
+
+    if (this.touch) {
+      document.body.classList.add('touch');
+      this.touchControls = new TouchControls(ui, this.input, {
+        onPause: () => this.pauseTouch(),
+        onWeaponCycle: (dir) => {
+          this.arsenal.cycle(dir);
+          this.touchControls?.setWeaponLabel(this.arsenal.stats.navn);
+        },
+      });
+    }
 
     this.hud.setVisible(false);
     this.input.attach();
@@ -119,7 +134,8 @@ export class Game {
     this.player.spawn();
     this.hud.setVisible(true);
     this.state = 'playing';
-    this.player.lock();
+    this.touchControls?.setWeaponLabel(this.arsenal.stats.navn);
+    this.enterPlay();
     this.wave.startWave(1);
     this.hud.showBanner('WAVE 1', 'Get ready!');
     this.audio.waveStart();
@@ -127,13 +143,19 @@ export class Game {
 
   private resume(): void {
     this.audio.resume();
-    this.player.lock();
+    if (this.touch) {
+      this.state = 'playing';
+      this.menu.hidePause();
+      this.touchControls?.setVisible(true);
+    } else {
+      this.player.lock();
+    }
   }
 
   private openShop(): void {
     this.state = 'shop';
     this.input.clear();
-    this.player.unlock();
+    this.exitPlay();
     this.audio.waveStart();
     this.shop.show(this.wave.wave + 1);
   }
@@ -141,7 +163,7 @@ export class Game {
   private nextWave(): void {
     const next = this.wave.wave + 1;
     this.state = 'playing';
-    this.player.lock();
+    this.enterPlay();
     this.wave.startWave(next);
     this.hud.showBanner(`WAVE ${next}`, 'Watch out!');
     this.audio.waveStart();
@@ -150,9 +172,30 @@ export class Game {
   private gameOver(): void {
     this.state = 'gameover';
     this.input.clear();
-    this.player.unlock();
+    this.exitPlay();
     this.audio.gameOver();
     this.menu.showGameOver(this.wave.wave, this.kills, this.economy.totalEarned);
+  }
+
+  /** Pause via skærm-knappen (touch har ingen pointer-lock/Esc). */
+  private pauseTouch(): void {
+    if (this.state !== 'playing') return;
+    this.state = 'paused';
+    this.input.clear();
+    this.touchControls?.setVisible(false);
+    this.menu.showPause();
+  }
+
+  /** Gå ind i spil: vis touch-knapper eller lås musen. */
+  private enterPlay(): void {
+    if (this.touch) this.touchControls?.setVisible(true);
+    else this.player.lock();
+  }
+
+  /** Forlad spil: skjul touch-knapper eller slip musen. */
+  private exitPlay(): void {
+    if (this.touch) this.touchControls?.setVisible(false);
+    else this.player.unlock();
   }
 
   // ---- kamp / mønter ----
@@ -233,9 +276,15 @@ export class Game {
   // ---- hovedloop ----
 
   update(dt: number): void {
-    // Sigte/zoom (højre museknap) – kun under spil
+    // Sigte/zoom (højre museknap / sigte-knap) – kun under spil
     const aiming = this.state === 'playing' && this.input.rightHeld;
     this.arsenal.setAiming(aiming);
+
+    // Touch-kig: anvend ophobet træk-delta (langsommere når man sigter)
+    if (this.touch && this.state === 'playing') {
+      const look = this.input.consumeLook();
+      this.player.applyTouchLook(look.x, look.y, TOUCH_LOOK_SENS * (aiming ? AIM_SENS_FACTOR : 1));
+    }
 
     if (this.state === 'playing') {
       this.handleInput();
@@ -250,6 +299,7 @@ export class Game {
       this.hud.setCoins(this.economy.coins);
       this.hud.setWave(this.wave.wave, this.wave.remaining);
       this.hud.setWeapon(this.arsenal.stats.navn, this.arsenal.ammoText(), this.arsenal.reloading);
+      this.touchControls?.setWeaponLabel(this.arsenal.stats.navn);
     }
 
     // Blød zoom + langsommere kig når man sigter (nulstilles uden for spil)

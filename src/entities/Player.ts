@@ -24,6 +24,7 @@ export class Player {
   private bobTime = 0;
   private vy = 0;
   private onGround = true;
+  private lookEuler = new THREE.Euler(0, 0, 0, 'YXZ');
 
   constructor(
     camera: THREE.PerspectiveCamera,
@@ -66,15 +67,36 @@ export class Player {
     this.onGround = true;
   }
 
+  /** Drej kameraet via touch-træk (samme matematik som PointerLockControls). */
+  applyTouchLook(dx: number, dy: number, sensitivity: number): void {
+    if (dx === 0 && dy === 0) return;
+    this.lookEuler.setFromQuaternion(this.camera.quaternion);
+    this.lookEuler.y -= dx * sensitivity;
+    this.lookEuler.x -= dy * sensitivity;
+    const lim = Math.PI / 2 - 0.02;
+    this.lookEuler.x = THREE.MathUtils.clamp(this.lookEuler.x, -lim, lim);
+    this.camera.quaternion.setFromEuler(this.lookEuler);
+  }
+
   update(dt: number, input: Input): void {
-    let forward = (input.isHeld('KeyW') ? 1 : 0) - (input.isHeld('KeyS') ? 1 : 0);
-    let right = (input.isHeld('KeyD') ? 1 : 0) - (input.isHeld('KeyA') ? 1 : 0);
-    if (forward !== 0 && right !== 0) {
-      const inv = 1 / Math.sqrt(2);
-      forward *= inv;
-      right *= inv;
+    let forward: number;
+    let right: number;
+    let sprint: boolean;
+    if (input.usingTouch) {
+      // Analog joystick – fart følger udsving (magnitude ≤ 1).
+      forward = input.moveY;
+      right = input.moveX;
+      sprint = input.sprinting;
+    } else {
+      forward = (input.isHeld('KeyW') ? 1 : 0) - (input.isHeld('KeyS') ? 1 : 0);
+      right = (input.isHeld('KeyD') ? 1 : 0) - (input.isHeld('KeyA') ? 1 : 0);
+      if (forward !== 0 && right !== 0) {
+        const inv = 1 / Math.sqrt(2);
+        forward *= inv;
+        right *= inv;
+      }
+      sprint = input.isHeld('ShiftLeft') || input.isHeld('ShiftRight');
     }
-    const sprint = input.isHeld('ShiftLeft') || input.isHeld('ShiftRight');
     const speed = sprint ? PLAYER_SPRINT : PLAYER_SPEED;
 
     this.controls.moveForward(forward * speed * dt);

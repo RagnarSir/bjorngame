@@ -1,10 +1,20 @@
 // Tastatur- og muse-input. Skelner mellem "holdt nede" og "lige trykket" (edge).
+// Touch-styring (iPad m.fl.) skriver ind i de samme felter via de virtuelle
+// hjælpemetoder nederst, så resten af spillet er ligeglad med inputkilden.
 export class Input {
   private held = new Set<string>();
   private pressedThisFrame = new Set<string>();
   mouseHeld = false;
   mouseClickedThisFrame = false;
   rightHeld = false;
+
+  // --- Touch/analog input ---
+  usingTouch = false; // når true bruger Player analog-vektoren i stedet for WASD
+  moveX = 0; // analog sidelæns [-1,1] (+ = højre)
+  moveY = 0; // analog frem/tilbage [-1,1] (+ = frem)
+  sprinting = false;
+  lookDX = 0; // ophobet kig-delta i px, tømmes af consumeLook() hvert frame
+  lookDY = 0;
 
   private onKeyDown = (e: KeyboardEvent): void => {
     // Lad browser-genveje med Ctrl/Meta være i fred.
@@ -72,5 +82,25 @@ export class Input {
     this.mouseHeld = false;
     this.mouseClickedThisFrame = false;
     this.rightHeld = false;
+    this.moveX = 0;
+    this.moveY = 0;
+    this.sprinting = false;
+    this.lookDX = 0;
+    this.lookDY = 0;
+  }
+
+  // ---- Virtuelle hjælpere til touch-styring ----
+
+  /** Et enkelt "tryk" (svarer til wasPressed denne frame), fx 'Space' eller 'KeyR'. */
+  pressVirtual(code: string): void {
+    this.pressedThisFrame.add(code);
+  }
+
+  /** Læs og nulstil det ophobede kig-delta (touch). */
+  consumeLook(): { x: number; y: number } {
+    const d = { x: this.lookDX, y: this.lookDY };
+    this.lookDX = 0;
+    this.lookDY = 0;
+    return d;
   }
 }

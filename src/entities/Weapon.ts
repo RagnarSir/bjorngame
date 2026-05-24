@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { WeaponId, WeaponStats } from '../types';
-import { VAABEN, STARTVAABEN } from '../data/weapons';
+import { VAABEN, STARTVAABEN, VAABEN_RAEKKEFOELGE } from '../data/weapons';
 import { AIM_SPREAD_FACTOR } from '../config';
 import { buildViewModel, type ViewModel } from './viewmodels';
 
@@ -89,6 +89,15 @@ export class Arsenal {
     this.reloading = false;
     this.reloadTimer = 0;
     this.cooldown = 0;
+  }
+
+  /** Skift til næste/forrige ejede våben (til touch-knappen). */
+  cycle(dir: number): void {
+    const order = VAABEN_RAEKKEFOELGE.filter((id) => this.owned.has(id));
+    if (order.length <= 1) return;
+    const idx = order.indexOf(this.current);
+    const next = order[(idx + dir + order.length) % order.length];
+    this.equip(next);
   }
 
   /** Forsøg at affyre. Returnerer en ShotSpec, eller null hvis ikke muligt. */

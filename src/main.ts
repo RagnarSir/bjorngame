@@ -38,3 +38,13 @@ async function init(): Promise<void> {
 }
 
 void init();
+
+// PWA: registrér service worker (offline + installérbar). './sw.js' løses relativt
+// til siden, så scope passer både på localhost og GitHub Pages-undermappen.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      /* SW er en progressiv forbedring – ignorér fejl (fx file://) */
+    });
+  });
+}

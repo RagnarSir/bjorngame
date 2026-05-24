@@ -9,6 +9,7 @@ export const PLAYER_SPEED = 7.0; // enheder/sekund
 export const PLAYER_SPRINT = 11.0;
 export const PLAYER_MAX_HEALTH = 100;
 export const MOUSE_SENSITIVITY = 1.0;
+export const TOUCH_LOOK_SENS = 0.004; // radianer pr. px når man trækker for at kigge (iPad)
 export const JUMP_SPEED = 6.5; // start-fart opad ved hop
 export const GRAVITY = 22; // tyngdekraft (enheder/sek²)
 
